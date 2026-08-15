@@ -1,0 +1,505 @@
+:root {
+  /* Colores para el dashboard */
+  --dashboard-primary: #004e8f;
+  --dashboard-secondary: #72c6ef;
+  --dashboard-success: #198754;
+  --dashboard-danger: #dc3545;
+  --dashboard-card-border: #eef2f7;
+  --dashboard-cards: #c4dbd4;
+  --dashboard-body: #f4f7f6;
+  --dashboard-surface: #ffffff;
+  --dashboard-shadow: 0 10px 30px rgba(0, 78, 143, 0.08);
+
+  /* Colores para el gráfico */
+  --chart-color-1: #004e8f;
+  --chart-color-2: #72c6ef;
+  --chart-color-3: #56cc9d;
+  --chart-color-4: #ff6b6b;
+  --chart-color-5: #ffd166;
+  --chart-color-6: #06d6a0;
+  --chart-color-7: #118ab2;
+  --chart-color-8: #073b4c;
+  --chart-color-9: #f72585;
+  --chart-color-10: #b5179e;
+  --chart-color-11: #7209b7;
+  --chart-color-12: #560bad;
+  --chart-color-13: #480ca8;
+  --chart-color-14: #3a0ca3;
+  --chart-color-15: #3f37c9;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--dashboard-body);
+  font-family: var(--font-primary, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+}
+
+.dashboard-page {
+  min-height: 100vh;
+}
+
+.dashboard-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  margin-bottom: 0;
+  box-shadow: 0 8px 24px rgba(0, 78, 143, 0.12);
+}
+
+.header-nav {
+  background: linear-gradient(90deg, #64b3f4, #c2e59c);
+}
+
+.dashboard-topbar__inner {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 1rem clamp(1rem, 2.8vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-title {
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 2.3rem);
+  line-height: 1.2;
+}
+
+.dashboard-signout-btn {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.dashboard-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: clamp(1rem, 2.5vw, 2.5rem);
+  min-height: calc(100vh - 84px);
+}
+
+.dashboard-summary-row .col-md-4,
+.dashboard-summary-row .col-lg-4,
+.dashboard-summary-row [class*="col-"] {
+  display: flex;
+}
+
+.dashboard-card {
+  width: 100%;
+  border: 1px solid var(--dashboard-card-border);
+  border-radius: 18px;
+  background-color: var(--dashboard-surface);
+  box-shadow: var(--dashboard-shadow);
+}
+
+.dashboard-summary-row .dashboard-card {
+  min-height: clamp(140px, 18vh, 220px);
+}
+
+.dashboard-balance-card .card-body {
+  text-align: left;
+}
+
+.dashboard-workspace-row {
+  min-height: clamp(420px, 46vh, 760px);
+}
+
+.dashboard-form-column {
+  align-self: flex-start;
+}
+
+.dashboard-form-card .card-body,
+.dashboard-chart-card .card-body {
+  display: flex;
+}
+
+.dashboard-form-card .card-body {
+  align-items: stretch;
+}
+
+#transactionForm {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+
+.dashboard-form-card {
+  height: auto;
+}
+
+.dashboard-form-card .card-body > #transactionForm,
+.dashboard-form-card .card-body form {
+  width: 100%;
+}
+
+.dashboard-source-summary {
+  padding-top: 0.25rem;
+}
+
+.dashboard-source-summary--top {
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 78, 143, 0.08);
+}
+
+.dashboard-source-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.dashboard-source-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background-color: var(--dashboard-surface);
+  border: 1px solid rgba(0, 78, 143, 0.08);
+}
+
+.dashboard-source-pill__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #4f647a;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dashboard-source-pill strong {
+  font-size: 1rem;
+  color: var(--dashboard-primary);
+}
+
+.dashboard-source-summary--top .dashboard-source-pill {
+  min-height: 100%;
+  justify-content: space-between;
+  padding: 0.9rem 0.85rem;
+}
+
+.dashboard-source-summary--top .dashboard-source-pill strong {
+  font-size: clamp(1.15rem, 0.95rem + 0.8vw, 1.65rem);
+}
+
+.dashboard-search-box {
+  min-width: min(100%, 280px);
+}
+
+.dashboard-submit-btn {
+  margin-top: 0.35rem;
+}
+
+.dashboard-chart-card .card-body {
+  min-height: clamp(320px, 42vh, 620px);
+}
+
+.dashboard-history-card {
+  min-height: clamp(220px, 24vh, 360px);
+}
+
+.dashboard-modal-header {
+  background: linear-gradient(135deg, var(--dashboard-primary), var(--dashboard-secondary));
+}
+
+.expense-chart-canvas {
+  width: 100% !important;
+  min-height: clamp(260px, 34vh, 480px);
+  max-height: none;
+}
+
+.column-type {
+  width: 120px;
+}
+
+.column-date {
+  width: 160px;
+}
+
+.column-actions {
+  width: 140px;
+}
+
+.card-body, 
+.card-header {
+  background-color: var(--dashboard-surface);
+  border-radius: 18px;
+}
+
+.card-header {
+  padding: 1.15rem 1.25rem 0.25rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+#transactionForm .form-control,
+#transactionForm .form-select,
+#editTransactionForm .form-control,
+#editTransactionForm .form-select,
+#monthSelector {
+  min-height: 44px;
+}
+
+.amount-numeric-input {
+  text-align: left;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.amount-numeric-input::-webkit-outer-spin-button,
+.amount-numeric-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+#transactionForm .mb-3,
+#editTransactionForm .mb-3 {
+  margin-bottom: 0.8rem !important;
+}
+
+#transactionForm .form-label,
+#editTransactionForm .form-label {
+  margin-bottom: 0.35rem;
+}
+
+#transactionForm .form-text,
+#editTransactionForm .form-text {
+  margin-top: 0.3rem;
+}
+
+#categoryInput,
+#editCategoryInput {
+  background-color: #ffffff;
+}
+
+#categoryInput optgroup,
+#editCategoryInput optgroup {
+  font-weight: 700;
+  color: #004e8f;
+  padding-top: 6px;
+  padding-bottom: 2px;
+  background-color: #f8fafc;
+}
+
+#categoryInput optgroup[label^="🏠"],
+#editCategoryInput optgroup[label^="🏠"] {
+  color: #9a3412;
+  background-color: #fff7ed;
+}
+
+#categoryInput optgroup[label^="🍔"],
+#editCategoryInput optgroup[label^="🍔"] {
+  color: #854d0e;
+  background-color: #fefce8;
+}
+
+#categoryInput optgroup[label^="🚗"],
+#editCategoryInput optgroup[label^="🚗"] {
+  color: #155e75;
+  background-color: #ecfeff;
+}
+
+#categoryInput optgroup[label^="💳"],
+#editCategoryInput optgroup[label^="💳"] {
+  color: #881337;
+  background-color: #fff1f2;
+}
+
+#categoryInput optgroup[label^="📦"],
+#editCategoryInput optgroup[label^="📦"] {
+  color: #4b5563;
+  background-color: #f9fafb;
+}
+
+#categoryInput optgroup[label^="💼"],
+#editCategoryInput optgroup[label^="💼"] {
+  color: #064e3b;
+  background-color: #ecfdf5;
+}
+
+#categoryInput optgroup[label^="🚀"],
+#editCategoryInput optgroup[label^="🚀"] {
+  color: #7c2d12;
+  background-color: #fff7ed;
+}
+
+#categoryInput optgroup[label^="📈"],
+#editCategoryInput optgroup[label^="📈"] {
+  color: #1e3a8a;
+  background-color: #eff6ff;
+}
+
+#categoryInput optgroup[label^="🎁"],
+#editCategoryInput optgroup[label^="🎁"] {
+  color: #86198f;
+  background-color: #fdf4ff;
+}
+
+#categoryInput option,
+#editCategoryInput option {
+  font-weight: 400;
+  color: #374151;
+  padding: 4px 10px;
+  background-color: #ffffff;
+}
+
+#totalIncome,
+#totalExpenses {
+  font-size: clamp(2rem, 1.1rem + 2vw, 3.25rem);
+}
+
+#sourceBalancesLabel,
+#totalIncomeLabel,
+#totalExpensesLabel,
+#expenseChartTitle,
+.card-header h5,
+.dashboard-title {
+  text-wrap: balance;
+}
+
+.table-responsive {
+  border-radius: 0 0 18px 18px;
+  min-height: clamp(150px, 16vh, 240px);
+}
+
+@media (min-width: 1400px) {
+  .dashboard-shell {
+    padding-left: 2.75rem;
+    padding-right: 2.75rem;
+  }
+
+  .card-header {
+    padding: 1.35rem 1.5rem 0.35rem;
+  }
+
+  .card-body {
+    padding: 1.35rem;
+  }
+
+  #transactionForm .form-control,
+  #transactionForm .form-select,
+  #editTransactionForm .form-control,
+  #editTransactionForm .form-select,
+  #monthSelector {
+    min-height: 46px;
+  }
+
+  #totalIncome,
+  #totalExpenses {
+    font-size: clamp(2.4rem, 1.3rem + 2.2vw, 4rem);
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .dashboard-shell {
+    padding-top: 1.25rem;
+    min-height: auto;
+  }
+
+  .expense-chart-canvas {
+    min-height: clamp(250px, 34vh, 360px);
+  }
+
+  .dashboard-source-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-workspace-row,
+  .dashboard-summary-row .dashboard-card,
+  .dashboard-history-card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-topbar__inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-title {
+    text-align: center;
+  }
+
+  .dashboard-signout-btn {
+    width: 100%;
+  }
+
+  .card-header,
+  .card-body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .dashboard-source-summary__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-search-box {
+    min-width: 100%;
+  }
+
+  .dashboard-source-summary__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-chart-canvas {
+    min-height: 240px;
+  }
+
+  .column-type,
+  .column-date,
+  .column-actions {
+    width: auto;
+  }
+
+  #transactionForm {
+    gap: 0.3rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-shell {
+    padding: 0.9rem;
+  }
+
+  .dashboard-title {
+    font-size: 1.2rem;
+  }
+
+  .card-header h5,
+  #expenseChartTitle,
+  #sourceBalancesLabel,
+  #totalIncomeLabel,
+  #totalExpensesLabel {
+    font-size: 1rem;
+  }
+
+  #totalIncome,
+  #totalExpenses {
+    font-size: 2rem;
+  }
+
+  .dashboard-summary-row .dashboard-card,
+  .dashboard-chart-card .card-body,
+  .dashboard-history-card,
+  .table-responsive {
+    min-height: auto;
+  }
+
+  .expense-chart-canvas {
+    min-height: 220px;
+  }
+}

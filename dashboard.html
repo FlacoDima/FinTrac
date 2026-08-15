@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fintrac - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="icon" href="/assets/imgs/graph-up-arrow.svg" type="image/x-icon">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="dashboard-page">
+    <nav class="header-nav dashboard-topbar">
+        <div class="dashboard-topbar__inner">
+            <h1 class="fw-bold text-white mb-0 dashboard-title">
+                <i class="fas fa-chart-line me-2"></i> Fintrac | Control Financiero
+            </h1>
+            <button id="signOutBtn" class="btn btn-danger dashboard-signout-btn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </nav>
+    <main class="container-fluid dashboard-shell">
+        <!-- Tarjetas de Resumen -->
+        <div class="row g-3 mb-4 dashboard-summary-row">
+            <div class="col-12 col-lg-6">
+                <div class="card shadow-sm border-0 dashboard-card dashboard-balance-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-wallet fa-2x text-primary me-2"></i>
+                            <h5 id="sourceBalancesLabel" class="mb-0 fw-semibold text-muted">Saldos por Sector (Mes
+                                Actual)</h5>
+                        </div>
+                        <div class="dashboard-source-summary dashboard-source-summary--top">
+                            <div class="dashboard-source-summary__grid">
+                                <div class="dashboard-source-pill">
+                                    <span class="dashboard-source-pill__label">
+                                        <i class="fas fa-wallet"></i> Efectivo
+                                    </span>
+                                    <strong id="walletBalance">$0</strong>
+                                </div>
+                                <div class="dashboard-source-pill">
+                                    <span class="dashboard-source-pill__label">
+                                        <i class="fas fa-piggy-bank"></i> Cuenta de Ahorros
+                                    </span>
+                                    <strong id="savingsBalance">$0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm border-0 dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-arrow-down fa-2x text-success me-2"></i>
+                            <h5 id="totalIncomeLabel" class="mb-0 fw-semibold text-muted">Ingresos (Mes Actual)</h5>
+                        </div>
+                        <h2 id="totalIncome" class="fw-bold text-success">$0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm border-0 dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <i class="fas fa-arrow-up fa-2x text-danger me-2"></i>
+                            <h5 id="totalExpensesLabel" class="mb-0 fw-semibold text-muted">Gastos (Mes Actual)</h5>
+                        </div>
+                        <h2 id="totalExpenses" class="fw-bold text-danger">$0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila con Formulario y Gráfico -->
+        <div class="row g-3 mb-4 align-items-start dashboard-workspace-row">
+            <!-- Formulario para Agregar Transacción -->
+            <div class="col-12 col-xl-4 dashboard-form-column">
+                <div class="card shadow-sm border-0 dashboard-card dashboard-form-card">
+                    <div class="card-header border-0 pb-0">
+                        <h5 class="fw-bold">
+                            <i class="fas fa-plus-circle me-1"></i> Agregar Transacción
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="transactionForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tipo</label>
+                                <div class="d-flex gap-2">
+                                    <div class="form-check flex-fill">
+                                        <input class="form-check-input" type="radio" name="transactionType"
+                                            id="incomeType" value="income" checked>
+                                        <label class="form-check-label text-success fw-semibold" for="incomeType">
+                                            <i class="fas fa-arrow-down"></i> Ingreso
+                                        </label>
+                                    </div>
+                                    <div class="form-check flex-fill">
+                                        <input class="form-check-input" type="radio" name="transactionType"
+                                            id="expenseType" value="expense">
+                                        <label class="form-check-label text-danger fw-semibold" for="expenseType">
+                                            <i class="fas fa-arrow-up"></i> Gasto
+                                        </label>
+                                    </div>
+                                    <div class="form-check flex-fill">
+                                        <input class="form-check-input" type="radio" name="transactionType"
+                                            id="transferType" value="transfer">
+                                        <label class="form-check-label text-primary fw-semibold" for="transferType">
+                                            <i class="fas fa-right-left"></i> Retiro Bancario
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="amountInput" class="form-label fw-semibold">Monto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-semibold">$</span>
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control amount-numeric-input" id="amountInput" min="1"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="categoryFieldWrapper">
+                                <label for="categoryInput" class="form-label fw-semibold">Categoría</label>
+                                <select class="form-select" id="categoryInput" required>
+                                    <option value="">Selecciona una categoría</option>
+                                </select>
+                            </div>
+                            <div class="mb-3" id="sourceFieldWrapper">
+                                <label for="sourceInput" id="sourceInputLabel" class="form-label fw-semibold">Agregar
+                                    a</label>
+                                <select class="form-select" id="sourceInput" required>
+                                    <option value="wallet">Efectivo</option>
+                                    <option value="savings">Cuenta de Ahorros</option>
+                                </select>
+                                <div id="sourceInputHelp" class="form-text">Selecciona en qué sector se registrará este
+                                    movimiento.</div>
+                            </div>
+                            <div class="mb-3 d-none" id="destinationFieldWrapper">
+                                <label for="destinationInput" id="destinationInputLabel"
+                                    class="form-label fw-semibold">Cuenta de destino</label>
+                                <select class="form-select" id="destinationInput">
+                                    <option value="wallet">Efectivo</option>
+                                    <option value="savings">Cuenta de Ahorros</option>
+                                </select>
+                                <div id="destinationInputHelp" class="form-text">Selecciona a qué sector llegará la
+                                    plata.</div>
+                            </div>
+                            <div class="mb-3 d-none" id="bankFieldWrapper">
+                                <label for="bankInput" class="form-label fw-semibold">Cuenta Bancaria</label>
+                                <select class="form-select" id="bankInput">
+                                    <option value="">Selecciona el banco</option>
+                                </select>
+                                <div id="bankInputHelp" class="form-text">Selecciona el banco del cual estás retirando
+                                    plata.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descriptionInput" class="form-label fw-semibold">Descripción</label>
+                                <input type="text" class="form-control" id="descriptionInput"
+                                    placeholder="Ej: Pago de arriendo o traslado a billetera">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-semibold dashboard-submit-btn">
+                                <i class="fas fa-save me-1"></i> Guardar Transacción
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Torta (Gastos por Categoría) -->
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm border-0 h-100 dashboard-card dashboard-chart-card">
+                    <div class="card-header border-0 pb-0">
+                        <h5 id="expenseChartTitle" class="fw-bold">
+                            <i class="fas fa-chart-pie me-1"></i> Distribución de Gastos (Mes Actual)
+                        </h5>
+                    </div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <canvas id="expenseChart" class="expense-chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Transacciones -->
+        <div class="card shadow-sm border-0 dashboard-card dashboard-history-card">
+            <div class="card-header border-0 pb-0">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-1">
+                            <i class="fas fa-list-alt me-1"></i> Historial de Transacciones
+                        </h5>
+                        <p id="selectedMonthLabel" class="text-muted mb-0 small">Mes seleccionado: Mes actual</p>
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-end gap-2">
+                        <div class="dashboard-search-box">
+                            <label for="transactionSearchInput" class="form-label fw-semibold small mb-1">Buscar
+                                descripción</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="search" class="form-control" id="transactionSearchInput"
+                                    placeholder="Buscar por descripción">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="monthSelector" class="form-label fw-semibold small mb-1">Seleccionar mes</label>
+                            <input type="month" class="form-control" id="monthSelector">
+                        </div>
+                        <button id="exportCsvBtn" type="button" class="btn btn-success fw-semibold mt-sm-4" disabled>
+                            <i class="fas fa-file-excel me-1"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center column-type">Tipo</th>
+                                <th>Categoría</th>
+                                <th>Movimiento</th>
+                                <th>Descripción</th>
+                                <th class="text-end">Monto</th>
+                                <th class="text-end column-date">Fecha</th>
+                                <th class="text-center column-actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody">
+                            <!-- Aquí se llenarán las filas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <div class="modal fade" id="signOutModal" tabindex="-1" aria-labelledby="signOutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header dashboard-modal-header text-white">
+                    <h5 class="modal-title fw-bold" id="signOutModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="fw-semibold">¿Estás seguro que deseas cerrar tu sesión?</h5>
+                    <p class="text-muted">Perderás el acceso a tu cuenta hasta que vuelvas a iniciar sesión.</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <button type="button" id="confirmSignOutBtn" class="btn btn-danger px-4">
+                        <i class="fas fa-check me-1"></i> Aceptar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Transacción -->
+    <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header dashboard-modal-header text-white">
+                    <h5 class="modal-title fw-bold" id="editTransactionModalLabel">
+                        <i class="fas fa-edit me-2"></i> Editar Transacción
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTransactionForm">
+                        <input type="hidden" id="editTransactionId">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <div class="d-flex gap-2">
+                                <div class="form-check flex-fill">
+                                    <input class="form-check-input" type="radio" name="editTransactionType"
+                                        id="editIncomeType" value="income">
+                                    <label class="form-check-label text-success fw-semibold" for="editIncomeType">
+                                        <i class="fas fa-arrow-down"></i> Ingreso
+                                    </label>
+                                </div>
+                                <div class="form-check flex-fill">
+                                    <input class="form-check-input" type="radio" name="editTransactionType"
+                                        id="editExpenseType" value="expense">
+                                    <label class="form-check-label text-danger fw-semibold" for="editExpenseType">
+                                        <i class="fas fa-arrow-up"></i> Gasto
+                                    </label>
+                                </div>
+                                <div class="form-check flex-fill">
+                                    <input class="form-check-input" type="radio" name="editTransactionType"
+                                        id="editTransferType" value="transfer">
+                                    <label class="form-check-label text-primary fw-semibold" for="editTransferType">
+                                        <i class="fas fa-right-left"></i> Retiro Bancario
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAmountInput" class="form-label fw-semibold">Monto</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light fw-semibold">$</span>
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control amount-numeric-input" id="editAmountInput" min="1"
+                                    required
+                            </div>
+                        </div>
+                        <div class="mb-3" id="editCategoryFieldWrapper">
+                            <label for="editCategoryInput" class="form-label fw-semibold">Categoría</label>
+                            <select class="form-select" id="editCategoryInput" required>
+                                <option value="">Selecciona una categoría</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="editSourceFieldWrapper">
+                            <label for="editSourceInput" id="editSourceInputLabel"
+                                class="form-label fw-semibold">Agregar a</label>
+                            <select class="form-select" id="editSourceInput" required>
+                                <option value="wallet">Efectivo</option>
+                                <option value="savings">Cuenta de Ahorros</option>
+                            </select>
+                            <div id="editSourceInputHelp" class="form-text">Selecciona en qué sector se registrará este
+                                movimiento.</div>
+                        </div>
+                        <div class="mb-3 d-none" id="editDestinationFieldWrapper">
+                            <label for="editDestinationInput" id="editDestinationInputLabel"
+                                class="form-label fw-semibold">Cuenta de destino</label>
+                            <select class="form-select" id="editDestinationInput">
+                                <option value="wallet">Efectivo</option>
+                                <option value="savings">Cuenta de Ahorros</option>
+                            </select>
+                            <div id="editDestinationInputHelp" class="form-text">Selecciona a qué sector llegará la
+                                plata.</div>
+                        </div>
+                        <div class="mb-3 d-none" id="editBankFieldWrapper">
+                            <label for="editBankInput" class="form-label fw-semibold">Cuenta Bancaria</label>
+                            <select class="form-select" id="editBankInput">
+                                <option value="">Selecciona el banco</option>
+                            </select>
+                            <div id="editBankInputHelp" class="form-text">Selecciona el banco del cual estás retirando
+                                plata.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescriptionInput" class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" id="editDescriptionInput"
+                                placeholder="Ej: Pago de arriendo o traslado a billetera">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <button type="button" id="saveEditBtn" class="btn btn-primary px-4">
+                        <i class="fas fa-check me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <div class="modal fade" id="deleteTransactionModal" tabindex="-1" aria-labelledby="deleteTransactionModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="deleteTransactionModalLabel">
+                        <i class="fas fa-trash-alt me-2"></i> Eliminar Transacción
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                    <h5 class="fw-semibold">¿Deseas eliminar esta transacción?</h5>
+                    <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4">
+                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
