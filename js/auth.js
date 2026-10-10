@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Esperar a que el DOM esté completamente cargado
@@ -31,30 +32,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Lógica para cambiar entre formularios (solo en index) ---
   if (isIndexPage) {
-    function toggleForms() {
+    function showForm(formId) {
       const loginForm = document.getElementById('loginForm');
       const registerForm = document.getElementById('registerForm');
-      loginForm.classList.toggle('active');
-      registerForm.classList.toggle('active');
-      // Limpiar mensajes de error al cambiar de formulario
+      const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+
+      loginForm.classList.remove('active');
+      registerForm.classList.remove('active');
+      forgotPasswordForm.classList.remove('active');
+
+      const targetForm = document.getElementById(formId);
+      if (targetForm) {
+        targetForm.classList.add('active');
+      }
       clearAllErrors();
+      // Limpiar mensajes de éxito
+      const successElements = document.querySelectorAll('.success-message');
+      successElements.forEach(el => el.textContent = '');
     }
 
     // Event listeners para los enlaces de cambio de formulario
     const registerLink = document.getElementById('RegisterLink');
     const loginLink = document.getElementById('LoginLink');
+    const forgotPasswordLink = document.getElementById('ForgotPasswordLink');
+    const backToLoginLink = document.getElementById('BackToLoginLink');
 
     if (registerLink) {
       registerLink.addEventListener('click', (e) => {
         e.preventDefault();
-        toggleForms();
+        showForm('registerForm');
       });
     }
 
     if (loginLink) {
       loginLink.addEventListener('click', (e) => {
         e.preventDefault();
-        toggleForms();
+        showForm('loginForm');
+      });
+    }
+
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForm('forgotPasswordForm');
+      });
+    }
+
+    if (backToLoginLink) {
+      backToLoginLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForm('loginForm');
       });
     }
 
@@ -243,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .then((userCredential) => {
             console.log("¡Cuenta creada!", userCredential.user);
             // Cambiar al formulario de login
-            toggleForms();
+            showForm('loginForm');
             // Limpiar formulario de registro
             registerForm.reset();
           })
@@ -262,11 +289,64 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // --- Event listeners para limpiar errores cuando el usuario escribe ---
+    // --- Lógica para Recuperar Contraseña ---
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    if (forgotPasswordForm) {
+      forgotPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAllErrors();
+
+        const successElement = document.getElementById('forgot-email-success');
+        if (successElement) successElement.textContent = '';
+
+        const emailInput = document.getElementById('forgot-email');
+        const email = emailInput.value.trim();
+        let isValid = true;
+
+        if (email === '') {
+          showError('forgot-email', 'Por favor ingrese su correo electrónico');
+          isValid = false;
+        } else if (!validateEmail(email)) {
+          showError('forgot-email', 'Por favor ingrese un correo electrónico válido');
+          isValid = false;
+        }
+
+        if (!isValid) return;
+
+        try {
+          await sendPasswordResetEmail(auth, email);
+          console.log("¡Correo de recuperación enviado!");
+          if (successElement) {
+            successElement.textContent = '¡Enlace enviado con éxito! Revisa tu bandeja de entrada (o spam) de "' + email + '" y sigue las instrucciones para restablecer tu contraseña.';
+          }
+          forgotPasswordForm.reset();
+        } catch (error) {
+          if (error.code === 'auth/invalid-email') {
+            showError('forgot-email', 'Correo electrónico inválido, por favor verifica el formato.');
+          } else if (error.code === 'auth/user-not-found') {
+            showError('forgot-email', 'No existe una cuenta registrada con este correo electrónico.');
+          } else if (error.code === 'auth/missing-email') {
+            showError('forgot-email', 'Por favor ingrese su correo electrónico.');
+          } else if (error.code === 'auth/too-many-requests') {
+            showError('forgot-email', 'Has solicitado demasiados enlaces recientemente. Por favor intenta de nuevo más tarde.');
+          } else if (error.code === 'auth/network-request-failed') {
+            showError('forgot-email', 'Error de conexión. Por favor verifica tu internet e intenta nuevamente.');
+          } else {
+            showError('forgot-email', 'No se pudo enviar el enlace de recuperación. Por favor intenta de nuevo en unos minutos.');
+            console.error('Error recuperación:', error.code, error.message);
+          }
+        }
+      });
+    }
+
+    // --- Event listeners para limpiar errores y mensajes de éxito cuando el usuario escribe ---
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
       input.addEventListener('input', () => {
         clearError(input.id);
+        // Limpiar también mensaje de éxito asociado si existe
+        const successElement = document.getElementById(`${input.id}-success`);
+        if (successElement) successElement.textContent = '';
       });
     });
   }

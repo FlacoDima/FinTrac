@@ -200,13 +200,13 @@
                     <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-end gap-2">
                         <div class="dashboard-search-box">
                             <label for="transactionSearchInput" class="form-label fw-semibold small mb-1">Buscar
-                                descripción</label>
+                                categoría</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
                                 <input type="search" class="form-control" id="transactionSearchInput"
-                                    placeholder="Buscar por descripción">
+                                    placeholder="Buscar por categoría">
                             </div>
                         </div>
                         <div>
@@ -226,6 +226,7 @@
                             <tr>
                                 <th class="text-center column-type">Tipo</th>
                                 <th>Categoría</th>
+                                <th>Cuenta Bancaria</th>
                                 <th>Movimiento</th>
                                 <th>Descripción</th>
                                 <th class="text-end">Monto</th>
@@ -373,15 +374,15 @@
     </div>
 
     <!-- Modal de Confirmación de Eliminación -->
-    <div class="modal fade" id="deleteTransactionModal" tabindex="-1" aria-labelledby="deleteTransactionModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+    <div class="modal" id="deleteTransactionModal" tabindex="-1" aria-labelledby="deleteTransactionModalLabel"
+        aria-hidden="true" style="z-index: 9999;">
+        <div class="modal-dialog modal-dialog-centered" style="z-index: 10000;">
             <div class="modal-content shadow-lg border-0">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title fw-bold" id="deleteTransactionModalLabel">
                         <i class="fas fa-trash-alt me-2"></i> Eliminar Transacción
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    <button type="button" id="closeDeleteModalBtn" class="btn-close btn-close-white"
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
@@ -390,7 +391,7 @@
                     <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0 pb-4">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    <button type="button" id="cancelDeleteModalBtn" class="btn btn-light px-4">
                         <i class="fas fa-times me-1"></i> Cancelar
                     </button>
                     <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4">

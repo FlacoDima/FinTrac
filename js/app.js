@@ -31,7 +31,7 @@ let currentSummary = {
 };
 let transactionToDeleteId = null;
 const DEFAULT_TRANSACTION_SOURCE = 'wallet';
-const DEFAULT_TRANSFER_CATEGORY = 'Transferencia entre cuentas';
+const DEFAULT_TRANSFER_CATEGORY = 'Retiro de cuenta bancaria';
 
 const TRANSACTION_SOURCES = {
   wallet: {
@@ -152,13 +152,27 @@ function initDashboard() {
     editModal = new bootstrap.Modal(editModalElement);
   }
 
-  // Inicializar modal de eliminar (1 sola instancia + cleanup de backdrop huerfano)
+  // Inicializar modal de eliminar (1 sola instancia de Bootstrap; NO tocar el DOM manualmente)
+  let deleteModalBackdropObserver = null;
   const deleteModalElement = document.getElementById('deleteTransactionModal');
   if (deleteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-    deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalElement, {
-      backdrop: true,
-      keyboard: true,
+    deleteModal = new bootstrap.Modal(deleteModalElement, {
+      backdrop: 'static',
+      keyboard: false,
       focus: true
+    });
+
+    // Forzamos z-index y visibility en cada ciclo de apertura
+    deleteModalElement.addEventListener('show.bs.modal', () => {
+      const confirmBtn = document.getElementById('confirmDeleteBtn');
+      if (confirmBtn) confirmBtn.disabled = false;
+      forceDeleteModalAboveBackdrop(deleteModalElement);
+    });
+
+    deleteModalElement.addEventListener('shown.bs.modal', () => {
+      const confirmBtn = document.getElementById('confirmDeleteBtn');
+      if (confirmBtn) confirmBtn.disabled = false;
+      forceDeleteModalAboveBackdrop(deleteModalElement);
     });
 
     deleteModalElement.addEventListener('hidden.bs.modal', () => {
@@ -167,15 +181,49 @@ function initDashboard() {
       if (confirmBtn) {
         confirmBtn.disabled = false;
       }
-      const anyModalOpen = document.querySelectorAll('.modal.show').length > 0;
-      if (!anyModalOpen) {
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-          backdrop.remove();
-        });
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
+      if (deleteModalBackdropObserver) {
+        try {
+          deleteModalBackdropObserver.disconnect();
+        } catch (error) {
+          /* noop */
+        }
+        deleteModalBackdropObserver = null;
       }
+      cleanupOrphanBackdrops();
+    });
+  }
+
+  // Listeners para cerrar el modal manualmente (quitamos data-bs-dismiss del HTML para evitar doble vía)
+  const cancelDeleteBtn = document.getElementById('cancelDeleteModalBtn');
+  if (cancelDeleteBtn) {
+    cancelDeleteBtn.addEventListener('click', () => closeDeleteModal());
+  }
+  const closeDeleteBtn = document.getElementById('closeDeleteModalBtn');
+  if (closeDeleteBtn) {
+    closeDeleteBtn.addEventListener('click', () => closeDeleteModal());
+  }
+
+  // MutationObserver global: cuando aparezca un .modal-backdrop, nos aseguramos que el modal esté por encima
+  // (Plan B si Bootstrap por alguna razón no sincroniza)
+  if (typeof MutationObserver !== 'undefined') {
+    deleteModalBackdropObserver = new MutationObserver(mutations => {
+      const deleteEl = document.getElementById('deleteTransactionModal');
+      if (!deleteEl) return;
+      for (const mutation of mutations) {
+        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+          for (const node of mutation.addedNodes) {
+            if (node && node.nodeType === 1 && node.classList && node.classList.contains('modal-backdrop')) {
+              forceDeleteModalAboveBackdrop(deleteEl);
+              return;
+            }
+          }
+        }
+      }
+    });
+
+    deleteModalBackdropObserver.observe(document.body, {
+      childList: true,
+      subtree: false
     });
   }
 
@@ -298,7 +346,16 @@ function initDashboard() {
           selectedMonth,
           selectedMonthLabel,
           summary: currentSummary,
-          chartCanvasId: 'expenseChart'
+          chartCanvasId: 'expenseChart',
+          formatters: {
+            getTypeLabel: getFormattedTransactionTypeLabel,
+            getCategoryLabel: getTransactionCategoryLabel,
+            getSourceLabel: getFormattedTransactionSourceLabel,
+            getDestinationLabel: getFormattedTransactionDestinationLabel,
+            getMovementText: getFormattedTransactionMovementText,
+            getBankLabel: getFormattedBankLabel,
+            getAmountValue: getFormattedAmountValueForExport
+          }
         });
       } finally {
         updateExportButtonState(visibleTransactions);
@@ -838,9 +895,9 @@ function updateTransactionTable(transactions) {
   if (transactions.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center text-muted py-4">
+        <td colspan="8" class="text-center text-muted py-4">
           ${currentSearchTerm
-            ? 'No hay transacciones que coincidan con la descripción buscada.'
+            ? 'No hay transacciones que coincidan con la categoría buscada.'
             : 'No hay transacciones registradas para el mes seleccionado.'}
         </td>
       </tr>
@@ -853,6 +910,7 @@ function updateTransactionTable(transactions) {
     const transactionType = normalizeTransactionType(transaction.type);
     const typeMeta = getTransactionTypeMeta(transactionType);
     const amountMeta = getTransactionAmountMeta(transaction);
+    const bankLabel = transaction.bank || '-';
 
     row.innerHTML = `
       <td class="text-center">
@@ -862,6 +920,7 @@ function updateTransactionTable(transactions) {
         </span>
       </td>
       <td>${getTransactionCategoryLabel(transaction)}</td>
+      <td>${bankLabel}</td>
       <td>${formatTransactionMovement(transaction)}</td>
       <td>${transaction.description || '-'}</td>
       <td class="fw-semibold text-end ${amountMeta.className}">
@@ -1009,83 +1068,132 @@ async function saveTransactionEdit() {
   }
 }
 
-// Cierra el modal de eliminar alineado con el HTML del dashboard
-function closeDeleteModal() {
-  const deleteModalElement = document.getElementById('deleteTransactionModal');
+// Asegura que el modal de eliminar quede SIEMPRE encima del backdrop (z-index + estilos)
+function forceDeleteModalAboveBackdrop(deleteModalElement) {
+  if (!deleteModalElement) return;
 
-  try {
-    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-      const instance = bootstrap.Modal.getInstance(deleteModalElement);
-      if (instance) {
-        instance.hide();
-      }
-    }
-  } catch (error) {
-    console.warn('No se pudo ocultar el modal de eliminar con Bootstrap:', error);
-  }
-
-  if (deleteModalElement) {
-    deleteModalElement.classList.remove('show');
-    deleteModalElement.style.display = '';
-    deleteModalElement.setAttribute('aria-hidden', 'true');
-    deleteModalElement.removeAttribute('aria-modal');
-  }
-
-  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-    backdrop.remove();
+  const backdrops = document.querySelectorAll('.modal-backdrop');
+  let backdropZ = 1040;
+  backdrops.forEach(backdrop => {
+    const current = Number(window.getComputedStyle(backdrop).zIndex || 0);
+    if (current > backdropZ) backdropZ = current;
   });
 
-  document.body.classList.remove('modal-open');
-  document.body.style.overflow = '';
-  document.body.style.paddingRight = '';
-  transactionToDeleteId = null;
+  deleteModalElement.style.zIndex = String(backdropZ + 20);
+  const dialog = deleteModalElement.querySelector('.modal-dialog');
+  if (dialog) {
+    dialog.style.zIndex = String(backdropZ + 40);
+  }
+
+  deleteModalElement.style.position = 'fixed';
+  deleteModalElement.style.top = '0';
+  deleteModalElement.style.left = '0';
+  deleteModalElement.style.right = '0';
+  deleteModalElement.style.bottom = '0';
+
+  // Si Bootstrap activó show, lo mantenemos; si no lo pintamos fallback
+  const isVisible = deleteModalElement.classList.contains('show');
+  if (isVisible) {
+    deleteModalElement.style.display = 'block';
+    deleteModalElement.style.visibility = 'visible';
+    deleteModalElement.removeAttribute('aria-hidden');
+    deleteModalElement.setAttribute('aria-modal', 'true');
+  }
 }
 
-// Abre el modal de eliminar (alinea con la estructura de dashboard.html)
-function openDeleteModal(transactionId) {
-  closeDeleteModal();
-  transactionToDeleteId = transactionId;
+// Elimina backdrop huérfanos y resetea el body solo si no hay ningún modal visible
+function cleanupOrphanBackdrops() {
+  const visibleModals = document.querySelectorAll('.modal.show');
+  const expectedBackdrops = visibleModals.length;
+  const allBackdrops = document.querySelectorAll('.modal-backdrop');
 
+  if (allBackdrops.length > expectedBackdrops) {
+    allBackdrops.forEach((backdrop, index) => {
+      if (index >= expectedBackdrops) {
+        backdrop.remove();
+      }
+    });
+  }
+
+  if (visibleModals.length === 0) {
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+}
+
+// Cierra el modal de eliminar delegando 100% en Bootstrap Modal
+function closeDeleteModal() {
+  const deleteModalElement = document.getElementById('deleteTransactionModal');
+  if (deleteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    const instance = bootstrap.Modal.getInstance(deleteModalElement)
+      || (deleteModal ? deleteModal : null);
+
+    if (instance) {
+      try {
+        instance.hide();
+      } catch (error) {
+        console.warn('No se pudo ocultar el modal de eliminar:', error);
+      }
+    }
+  }
+
+  setTimeout(() => {
+    cleanupOrphanBackdrops();
+  }, 100);
+}
+
+// Abre el modal de eliminar delegando 100% en Bootstrap Modal
+function openDeleteModal(transactionId) {
   const deleteModalElement = document.getElementById('deleteTransactionModal');
   if (!deleteModalElement) {
     console.warn('No existe el modal #deleteTransactionModal en dashboard.html');
     return;
   }
 
+  cleanupOrphanBackdrops();
+  transactionToDeleteId = transactionId;
+
   if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
-    console.warn('Bootstrap Modal no está cargado; abriendo modal manualmente.');
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-
-    deleteModalElement.classList.add('show');
-    deleteModalElement.style.display = 'block';
-    deleteModalElement.setAttribute('aria-hidden', 'false');
-    deleteModalElement.setAttribute('aria-modal', 'true');
-
-    document.body.classList.add('modal-open');
-    document.body.style.overflow = 'hidden';
+    console.warn('Bootstrap Modal no está cargado.');
     return;
   }
 
-  let instance = bootstrap.Modal.getInstance(deleteModalElement);
+  let instance = deleteModal || bootstrap.Modal.getInstance(deleteModalElement);
   if (!instance) {
-    instance = bootstrap.Modal.getOrCreateInstance(deleteModalElement, {
-      backdrop: true,
-      keyboard: true,
+    instance = new bootstrap.Modal(deleteModalElement, {
+      backdrop: 'static',
+      keyboard: false,
       focus: true
     });
+    deleteModal = instance;
   }
 
   try {
     instance.show();
   } catch (error) {
-    console.warn('Fallo al mostrar modal de eliminar con Bootstrap, abriendo manualmente:', error);
-    deleteModalElement.classList.add('show');
-    deleteModalElement.style.display = 'block';
-    deleteModalElement.setAttribute('aria-hidden', 'false');
-    deleteModalElement.setAttribute('aria-modal', 'true');
+    console.warn('Fallo al mostrar modal de eliminar con Bootstrap, fallback manual:', error);
+  }
+
+  // Fallback absoluto: si Bootstrap NO lo pintó (por alguna razón interna),
+  // nos aseguramos de que los estilos mínimos estén y quede por encima
+  setTimeout(() => {
+    const el = document.getElementById('deleteTransactionModal');
+    if (!el) return;
+    if (!el.classList.contains('show')) {
+      el.classList.add('show');
+    }
+    if (el.style.display !== 'block') {
+      el.style.display = 'block';
+    }
+    el.removeAttribute('aria-hidden');
+    el.setAttribute('aria-modal', 'true');
     document.body.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
-  }
+    forceDeleteModalAboveBackdrop(el);
+    cleanupOrphanBackdrops();
+  }, 120);
 }
 
 // Función para eliminar una transacción
@@ -1138,12 +1246,12 @@ function updateExportButtonState(transactions) {
 }
 
 function applyTransactionFilters() {
-  visibleTransactions = filterTransactionsByDescription(currentTransactions, currentSearchTerm);
+  visibleTransactions = filterTransactionsByCategory(currentTransactions, currentSearchTerm);
   updateTransactionTable(visibleTransactions);
   updateExportButtonState(visibleTransactions);
 }
 
-function filterTransactionsByDescription(transactions, searchTerm) {
+function filterTransactionsByCategory(transactions, searchTerm) {
   const normalizedSearchTerm = normalizeSearchText(searchTerm);
 
   if (!normalizedSearchTerm) {
@@ -1151,7 +1259,8 @@ function filterTransactionsByDescription(transactions, searchTerm) {
   }
 
   return transactions.filter(transaction => {
-    return normalizeSearchText(transaction.description || '').includes(normalizedSearchTerm);
+    const categoryLabel = getTransactionCategoryLabel(transaction);
+    return normalizeSearchText(categoryLabel || '').includes(normalizedSearchTerm);
   });
 }
 
@@ -1206,7 +1315,7 @@ function getTransactionTypeMeta(transactionType) {
 
   if (normalizedType === 'transfer') {
     return {
-      label: 'Transferencia',
+      label: 'Retiro Bancario',
       icon: 'fa-right-left',
       badgeClass: 'bg-primary'
     };
@@ -1299,7 +1408,7 @@ function getDescriptionPlaceholderForExpense(subcategory) {
 
 function getTransactionCategoryLabel(transaction) {
   if (normalizeTransactionType(transaction.type) === 'transfer') {
-    return DEFAULT_TRANSFER_CATEGORY;
+    return '-';
   }
   return mapLegacyCategory(transaction.type, transaction.category || '-');
 }
@@ -1310,15 +1419,9 @@ function formatTransactionMovement(transaction) {
 
   if (transactionType === 'transfer' && transaction.destinationSource) {
     const destinationMeta = getTransactionSourceMeta(transaction.destinationSource);
-    const bankInfo = transaction.bank ? `
-      <span class="badge text-bg-info text-white border-0">
-        <i class="fas fa-university me-1"></i>${transaction.bank}
-      </span>
-    ` : '';
 
     return `
       <div class="d-flex flex-wrap align-items-center gap-1">
-        ${bankInfo}
         <span class="badge text-bg-light border">
           <i class="fas ${sourceMeta.icon} me-1"></i>${sourceMeta.label}
         </span>
@@ -1533,4 +1636,51 @@ function formatCurrency(amount) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount);
+}
+
+// Helpers que se usan tanto para la tabla del historial como para el Excel exportado
+function getFormattedTransactionTypeLabel(transactionType) {
+  const typeMeta = getTransactionTypeMeta(transactionType);
+  return typeMeta?.label || 'Ingreso';
+}
+
+function getFormattedTransactionSourceLabel(source) {
+  const sourceMeta = getTransactionSourceMeta(source);
+  return sourceMeta?.label || TRANSACTION_SOURCES.wallet.label;
+}
+
+function getFormattedTransactionDestinationLabel(destinationSource) {
+  if (!destinationSource) return null;
+  const destMeta = getTransactionSourceMeta(destinationSource);
+  return destMeta?.label || null;
+}
+
+function getFormattedTransactionMovementText(transaction) {
+  const sourceLabel = getFormattedTransactionSourceLabel(transaction.source);
+  const transactionType = normalizeTransactionType(transaction.type);
+
+  if (transactionType === 'transfer' && transaction.destinationSource) {
+    const destinationLabel = getFormattedTransactionDestinationLabel(transaction.destinationSource);
+    if (destinationLabel) {
+      return `${sourceLabel} → ${destinationLabel}`;
+    }
+  }
+
+  return sourceLabel;
+}
+
+function getFormattedBankLabel(transaction) {
+  const transactionType = normalizeTransactionType(transaction.type);
+  if (transactionType === 'transfer') {
+    return transaction.bank || '-';
+  }
+  return '-';
+}
+
+function getFormattedAmountValueForExport(transaction) {
+  const transactionType = normalizeTransactionType(transaction.type);
+  if (transactionType === 'expense') {
+    return -Math.abs(transaction.amount);
+  }
+  return transaction.amount;
 }

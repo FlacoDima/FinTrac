@@ -144,3 +144,82 @@ input.error {
     font-weight: var(--font-weight-bold);
     cursor: pointer;
 }
+
+.forgot-password {
+    margin-bottom: 0.25rem;
+    margin-top: 0.15rem;
+}
+
+.forgot-password a {
+    color: #3d7a40;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.forgot-password a:hover {
+    color: #2c5aa0;
+    text-decoration: underline;
+}
+
+.forgot-password-info {
+    color: #3d7a40;
+    font-size: 0.825rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.success-message {
+    display: block;
+    color: #198754;
+    font-size: 0.7rem;
+    margin-top: 0.2rem;
+    min-height: var(--spacing-md);
+}
+
+#ForgotPasswordLink {
+    color: #3d7a40;
+}
+
+#BackToLoginLink {
+    text-decoration: underline;
+    /* margin-top: var(--spacing-md); */
+}
+
+.title-icon {
+    color: #2c5aa0;
+    margin-right: 0.5rem;
+}
+
+.label-icon {
+    color: #3d7a40;
+    margin-right: 0.4rem;
+}
+
+.link-icon {
+    margin-right: 0.35rem;
+}
+
+.auth-btn i {
+    margin-right: 0.5rem;
+}
+
+#forgotPasswordForm .forgot-password-info {
+    margin-bottom: 0.5rem;
+}
+
+#forgotPasswordForm .error-message,
+#forgotPasswordForm .success-message {
+    min-height: 0;
+}
+
+#forgotPasswordForm .auth-btn {
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+#forgotPasswordForm .auth-switch {
+    margin-top: 0.35rem;
+}

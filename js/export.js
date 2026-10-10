@@ -4,10 +4,12 @@ export async function exportTransactionsToExcel({
   selectedMonth,
   selectedMonthLabel,
   summary,
-  chartCanvasId
+  chartCanvasId,
+  formatters
 }) {
   if (!Array.isArray(transactions) || transactions.length === 0) return;
 
+  const safeFormatters = getSafeFormatters(formatters);
   const { default: ExcelJS } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
   const workbook = new ExcelJS.Workbook();
 
@@ -21,7 +23,7 @@ export async function exportTransactionsToExcel({
     chartCanvasId
   });
 
-  createTransactionsSheet(workbook, transactions);
+  createTransactionsSheet(workbook, transactions, safeFormatters);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
@@ -31,11 +33,68 @@ export async function exportTransactionsToExcel({
   const link = document.createElement('a');
 
   link.href = url;
-  link.download = `transacciones-${selectedMonth || 'mes'}.xlsx`;
+  link.download = buildExportFileName(selectedMonth, selectedMonthLabel);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function buildExportFileName(selectedMonth, selectedMonthLabel) {
+  const safeLabel = sanitizeFileName(selectedMonthLabel || resolveDefaultMonthLabel(selectedMonth));
+  return `transacciones - ${safeLabel}.xlsx`;
+}
+
+function sanitizeFileName(rawName) {
+  return String(rawName || 'mes')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveDefaultMonthLabel(selectedMonth) {
+  if (selectedMonth && /^\d{4}-\d{2}$/.test(selectedMonth)) {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleDateString('es-CO', {
+      month: 'long',
+      year: 'numeric'
+    }).replace(/^\w/, char => char.toUpperCase());
+  }
+
+  const today = new Date();
+  return today.toLocaleDateString('es-CO', {
+    month: 'long',
+    year: 'numeric'
+  }).replace(/^\w/, char => char.toUpperCase());
+}
+
+function getSafeFormatters(formatters) {
+  const defaultFormatters = {
+    getTypeLabel: (transactionType) =>
+      transactionType === 'income' ? 'Ingreso'
+        : transactionType === 'expense' ? 'Gasto'
+        : 'Retiro Bancario',
+    getCategoryLabel: (transaction) =>
+      transaction?.type === 'transfer' ? '-' : (transaction?.category || '-'),
+    getMovementText: (transaction) => {
+      const sourceLabels = { wallet: 'Efectivo', savings: 'Cuenta de Ahorros' };
+      const src = sourceLabels[transaction?.source] || 'Efectivo';
+      if (transaction?.type === 'transfer' && transaction?.destinationSource) {
+        const dst = sourceLabels[transaction.destinationSource] || 'Efectivo';
+        return `${src} → ${dst}`;
+      }
+      return src;
+    },
+    getBankLabel: (transaction) =>
+      transaction?.type === 'transfer' ? (transaction?.bank || '-') : '-',
+    getAmountValue: (transaction) =>
+      transaction?.type === 'expense' ? -Math.abs(transaction?.amount || 0) : (transaction?.amount || 0)
+  };
+
+  return { ...defaultFormatters, ...(formatters || {}) };
 }
 
 // Crea la hoja resumen del mes exportado
@@ -103,29 +162,28 @@ function createSummarySheet(workbook, { selectedMonthLabel, summary, chartCanvas
 }
 
 // Crea la hoja con el detalle de transacciones del mes exportado
-function createTransactionsSheet(workbook, transactions) {
+function createTransactionsSheet(workbook, transactions, formatters) {
   const worksheet = workbook.addWorksheet('Transacciones');
 
   worksheet.columns = [
     { header: 'Tipo', key: 'type', width: 14 },
     { header: 'Categoria', key: 'category', width: 28 },
-    { header: 'Banco', key: 'bank', width: 20 },
-    { header: 'Origen', key: 'source', width: 24 },
-    { header: 'Destino', key: 'destinationSource', width: 24 },
+    { header: 'Cuenta Bancaria', key: 'bank', width: 20 },
+    { header: 'Movimiento', key: 'movement', width: 32 },
     { header: 'Descripcion', key: 'description', width: 32 },
     { header: 'Monto', key: 'amount', width: 18 },
     { header: 'Fecha', key: 'date', width: 24 }
   ];
 
   transactions.forEach(transaction => {
+    const rawType = transaction?.type || 'income';
     worksheet.addRow({
-      type: transaction.type === 'income' ? 'Ingreso' : transaction.type === 'expense' ? 'Gasto' : 'Retiro Bancario',
-      category: transaction.category,
-      bank: transaction.bank || '-',
-      source: formatTransactionSource(transaction.source),
-      destinationSource: transaction.destinationSource ? formatTransactionSource(transaction.destinationSource) : '-',
+      type: formatters.getTypeLabel(rawType, transaction),
+      category: formatters.getCategoryLabel(transaction),
+      bank: formatters.getBankLabel(transaction),
+      movement: formatters.getMovementText(transaction),
       description: transaction.description || '-',
-      amount: transaction.amount,
+      amount: formatters.getAmountValue(transaction),
       date: transaction.date instanceof Date ? transaction.date : ''
     });
   });
@@ -137,7 +195,6 @@ function createTransactionsSheet(workbook, transactions) {
     fgColor: { argb: 'FF004E8F' }
   };
 
-  worksheet.getColumn('amount').numFmt = '"$"#,##0';
   worksheet.getColumn('date').numFmt = 'dd/mm/yyyy hh:mm';
 
   worksheet.eachRow((row, rowNumber) => {
@@ -145,11 +202,34 @@ function createTransactionsSheet(workbook, transactions) {
 
     const typeCell = row.getCell('type');
     const amountCell = row.getCell('amount');
-    const isIncome = typeCell.value === 'Ingreso';
-    const isTransfer = typeCell.value === 'Retiro Bancario';
+    const bankCell = row.getCell('bank');
+    const amountValue = Number(amountCell.value) || 0;
+    const typeValue = String(typeCell.value || '');
+    const isIncome = typeValue === 'Ingreso';
+    const isTransfer = typeValue === 'Retiro Bancario';
 
-    typeCell.font = { bold: true, color: { argb: isIncome ? 'FF198754' : isTransfer ? 'FF0D6EFD' : 'FFDC3545' } };
-    amountCell.font = { bold: true, color: { argb: isIncome ? 'FF198754' : isTransfer ? 'FF0D6EFD' : 'FFDC3545' } };
+    typeCell.font = {
+      bold: true,
+      color: { argb: isIncome ? 'FF198754' : isTransfer ? 'FF0D6EFD' : 'FFDC3545' }
+    };
+
+    if (isTransfer) {
+      amountCell.numFmt = '\↔ "$"#,##0';
+      amountCell.font = { bold: true, color: { argb: 'FF0D6EFD' } };
+    } else if (amountValue > 0) {
+      amountCell.numFmt = '\+ "$"#,##0;\- "$"#,##0';
+      amountCell.font = { bold: true, color: { argb: 'FF198754' } };
+    } else if (amountValue < 0) {
+      amountCell.numFmt = '\+ "$"#,##0;\- "$"#,##0';
+      amountCell.font = { bold: true, color: { argb: 'FFDC3545' } };
+    } else {
+      amountCell.numFmt = '"$"#,##0';
+      amountCell.font = { bold: true };
+    }
+
+    if (isTransfer && bankCell.value && bankCell.value !== '-') {
+      bankCell.font = { bold: true, color: { argb: 'FF0D6EFD' } };
+    }
   });
 }
 
@@ -162,13 +242,4 @@ function getChartImage(chartCanvasId) {
   }
 
   return canvas.toDataURL('image/png', 1);
-}
-
-function formatTransactionSource(source) {
-  const sourceLabels = {
-    wallet: 'Efectivo',
-    savings: 'Cuenta de Ahorros'
-  };
-
-  return sourceLabels[source] || sourceLabels.wallet;
 }

@@ -15,42 +15,43 @@
     <div class="auth-container">
         <!-- Formulario login -->
         <div id="loginForm" class="auth-form active">
-            <h2 class="fw-bold">Iniciar Sesión</h2>
+            <h2 class="fw-bold"> Inicio Sesión</h2>
             <form id="login-form">
                 <div class="form-group">
-                    <label class="fw-bold" for="login-email">Correo Electrónico</label>
+                    <label class="fw-bold" for="login-email"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
                     <input type="email" id="login-email" required placeholder="Ingrese su correo registrado">
                     <span class="error-message" id="login-email-error"></span>
                 </div>
                 <div class="form-group">
-                    <label class="fw-bold" for="login-password">Contraseña</label>
+                    <label class="fw-bold" for="login-password"><i class="fa-solid fa-key"></i> Contraseña</label>
                     <div class="password-container">
                         <input type="password" id="login-password" required placeholder="Ingrese su contraseña segura">
                         <i class="fas fa-eye-slash toggle-password" data-target="login-password"></i>
                     </div>
                     <span class="error-message" id="login-password-error"></span>
                 </div>
-                <button type="submit" class="auth-btn">Iniciar Sesión</button>
-                <p class="auth-switch fw-bold">¿No tienes cuenta? <a id="RegisterLink" href="#">Regístrate aquí</a></p>
+                <button type="submit" class="auth-btn"><i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión</button>
+                <p class="auth-switch fw-bold"><i class="fa-solid fa-user-plus link-icon"></i> ¿No tienes cuenta? <a id="RegisterLink" href="#">Regístrate aquí</a></p>
+                <p class="auth-switch fw-bold"><i class="fas fa-circle-question link-icon"></i><a id="ForgotPasswordLink" href="#"> ¿Olvidaste tu contraseña?</a></p>
             </form>
         </div>
 
         <!-- Formulario registro -->
         <div id="registerForm" class="auth-form">
-            <h2 class="fw-bold">Crear Cuenta</h2>
+            <h2 class="fw-bold"> Registro</h2>
             <form id="register-form">
                 <div class="form-group">
-                    <label class="fw-bold" for="register-name">Nombre Completo</label>
+                    <label class="fw-bold" for="register-name"><i class="fas fa-user label-icon"></i> Nombre Completo</label>
                     <input type="text" id="register-name" required placeholder="Nombre">
                     <span class="error-message" id="register-name-error"></span>
                 </div>
                 <div class="form-group">
-                    <label class="fw-bold" for="register-email">Correo Electrónico</label>
+                    <label class="fw-bold" for="register-email"><i class="fas fa-envelope label-icon"></i> Correo Electrónico</label>
                     <input type="email" id="register-email" required placeholder="ejemplo123@email.com">
                     <span class="error-message" id="register-email-error"></span>
                 </div>
                 <div class="form-group">
-                    <label class="fw-bold" for="register-password">Contraseña</label>
+                    <label class="fw-bold" for="register-password"><i class="fa-solid fa-key"></i> Contraseña</label>
                     <div class="password-container">
                         <input type="password" id="register-password" required placeholder="Crea una contraseña segura">
                         <i class="fas fa-eye-slash toggle-password" data-target="register-password"></i>
@@ -58,15 +59,31 @@
                     <span class="error-message" id="register-password-error"></span>
                 </div>
                 <div class="form-group">
-                    <label class="fw-bold" for="register-confirm-password">Confirmar Contraseña</label>
+                    <label class="fw-bold" for="register-confirm-password"><i class="fa-solid fa-key"></i> Confirmar Contraseña</label>
                     <div class="password-container">
                         <input type="password" id="register-confirm-password" required placeholder="Repite tu contraseña">
                         <i class="fas fa-eye-slash toggle-password" data-target="register-confirm-password"></i>
                     </div>
                     <span class="error-message" id="register-confirm-password-error"></span>
                 </div>
-                <button type="submit" class="auth-btn">Crear Cuenta</button>
-                <p class="auth-switch fw-bold">¿Ya tienes cuenta? <a id="LoginLink" href="#">Inicia sesión aquí</a></p>
+                <button type="submit" class="auth-btn"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
+                <p class="auth-switch fw-bold"><i class="fa-solid fa-arrow-right-to-bracket"></i> ¿Ya tienes cuenta? <a id="LoginLink" href="#">Inicia sesión aquí</a></p>
+            </form>
+        </div>
+
+        <!-- Formulario recuperar contraseña -->
+        <div id="forgotPasswordForm" class="auth-form">
+            <h2 class="fw-bold"><i class="fas fa-unlock-keyhole title-icon"></i> Recuperar Contraseña</h2>
+            <p class="forgot-password-info text-center"><i class="fas fa-circle-info link-icon"></i> Ingresa tu correo electrónico registrado y te enviaremos un enlace para restablecer tu contraseña.</p>
+            <form id="forgot-password-form">
+                <div class="form-group">
+                    <label class="fw-bold" for="forgot-email"><i class="fas fa-envelope label-icon"></i> Correo Electrónico</label>
+                    <input type="email" id="forgot-email" required placeholder="Ingrese su correo registrado">
+                    <span class="error-message" id="forgot-email-error"></span>
+                    <span class="success-message" id="forgot-email-success"></span>
+                </div>
+                <button type="submit" class="auth-btn"><i class="fa-regular fa-paper-plane"></i> Enviar Enlace de Recuperación</button>
+                <p class="auth-switch fw-bold"><i class="fas fa-right-to-bracket link-icon"></i> ¿Recordaste tu contraseña? <a id="BackToLoginLink" href="#">Inicia sesión aquí</a></p>
             </form>
         </div>
     </div>
